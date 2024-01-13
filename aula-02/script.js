@@ -1,10 +1,16 @@
 const form = document.querySelector("form");
-console.log(form);
+const inputs = document.querySelectorAll("input");
+
+let users = [];
+
+createDatabase();
+
+validateFields();
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();
 
-  const hasError = validateFields();
+  const hasError = validateFormOnSubmit();
 
   if (!hasError) {
     const name = document.getElementById("name").value;
@@ -29,13 +35,12 @@ form.addEventListener("submit", (event) => {
       address,
     };
 
-    console.log(payload);
+    saveUser(payload);
   }
 });
 
-function validateFields() {
+function validateFormOnSubmit() {
   let hasError = false;
-  const inputs = document.querySelectorAll("input");
   console.log(inputs);
   inputs.forEach((field) => {
     if (!field.value) {
@@ -49,4 +54,137 @@ function validateFields() {
   });
 
   return hasError;
+}
+
+function validateFields() {
+  inputs.forEach((input) => {
+    input.addEventListener("blur", (event) => {
+      if (!input.value) {
+        showErrorMessage(input);
+      } else {
+        hideErrorMessage(input);
+      }
+
+      console.log(event);
+
+      switch (input.id) {
+        case "name":
+        case "surname":
+        case "profession":
+          if (input.value.length < 2) {
+            input.nextElementSibling.innerText =
+              "O campo precisa ter, ao menos, 2 caracteres.";
+            showErrorMessage(input);
+          }
+          break;
+
+        case "birthDate":
+          compareDates(input);
+          break;
+
+        case "documentNumber":
+          if (input.value.length != 11) {
+            input.nextElementSibling.innerText =
+              "O campo precisa ter 11 caracteres.";
+            showErrorMessage(input);
+          }
+          break;
+
+        case "password":
+          if (input.value.length < 8) {
+            input.nextElementSibling.innerText =
+              "O campo precisa ter, ao menos, 8 caracteres.";
+            showErrorMessage(input);
+          }
+          break;
+
+        case "phone":
+          if (input.value.length < 10 || input.value.length > 11) {
+            input.nextElementSibling.innerText =
+              "O campo precisa ter entre 10 e 11 caracteres.";
+            showErrorMessage(input);
+          }
+          break;
+
+        default:
+          break;
+      }
+    });
+  });
+}
+
+function showErrorMessage(field) {
+  const sibling = field.nextElementSibling;
+  sibling.classList.add("d-block");
+  sibling.classList.remove("d-none");
+}
+
+function hideErrorMessage(field) {
+  const sibling = field.nextElementSibling;
+  sibling.classList.add("d-none");
+  sibling.classList.remove("d-block");
+}
+
+function compareDates(input) {
+  const birthDate = new Date(input.value + "T00:00:00").setHours(0, 0, 0, 0);
+  const today = new Date().setHours(0, 0, 0, 0);
+  if (birthDate >= today) {
+    input.nextElementSibling.innerText =
+      "A data de nascimento precisa ser menor que a data atual.";
+    showErrorMessage(input);
+  }
+}
+
+function saveUser(user) {
+  // getUsers();
+  // users.push(user);
+  // localStorage.setItem("USERS", JSON.stringify(users));
+
+  const request = indexedDB.open("database", 1);
+
+  request.onsuccess = function (event) {
+    const db = event.target.result;
+
+    const transaction = db.transaction(["users"], "readwrite");
+    const objectStore = transaction.objectStore("users");
+
+    console.log(user);
+    const requestAdd = objectStore.add(user);
+
+    requestAdd.onsuccess = function () {
+      window.location.href = "./usuarios.html";
+    };
+
+    requestAdd.onerror = function () {
+      console.log("Houve um erro!", event.target.error);
+    };
+  };
+
+  request.onerror = function (event) {};
+}
+
+function getUsers() {
+  users = JSON.parse(localStorage.getItem("USERS") || "[]");
+}
+
+function createDatabase() {
+  const request = indexedDB.open("database", 1);
+
+  request.onsuccess = function (event) {
+    const db = event.target.result;
+    console.log("Banco de dados aberto com sucesso!", db);
+  };
+
+  request.onerror = function (event) {
+    console.log("Erro ao abrir o banco de dados!", event.target.error);
+  };
+
+  request.onupgradeneeded = function (event) {
+    const db = event.target.result;
+
+    const objectStore = db.createObjectStore("users", {
+      keyPath: "id",
+      autoIncrement: true,
+    });
+  };
 }

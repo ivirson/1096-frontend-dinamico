@@ -125,8 +125,6 @@ element.addEventListener("mouseout", (event) => {
 
 ---
 
----
-
 - **_load:_** acionado quando uma página é carregada.
 
 ```js
