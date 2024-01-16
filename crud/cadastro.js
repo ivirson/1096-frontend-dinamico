@@ -1,8 +1,11 @@
 const form = document.querySelector("form");
 const inputs = document.querySelectorAll("input");
 
+let userId;
+
 let users = [];
 
+getUserIdFromUrl();
 createDatabase();
 
 validateFields();
@@ -136,31 +139,11 @@ function compareDates(input) {
 }
 
 function saveUser(user) {
-  // getUsers();
-  // users.push(user);
-  // localStorage.setItem("USERS", JSON.stringify(users));
-
-  const request = indexedDB.open("database", 1);
-
-  request.onsuccess = function (event) {
-    const db = event.target.result;
-
-    const transaction = db.transaction(["users"], "readwrite");
-    const objectStore = transaction.objectStore("users");
-
-    console.log(user);
-    const requestAdd = objectStore.add(user);
-
-    requestAdd.onsuccess = function () {
-      window.location.href = "./usuarios.html";
-    };
-
-    requestAdd.onerror = function () {
-      console.log("Houve um erro!", event.target.error);
-    };
-  };
-
-  request.onerror = function (event) {};
+  if (!userId) {
+    createUser(user);
+  } else {
+    updateUser(user);
+  }
 }
 
 function getUsers() {
@@ -186,5 +169,97 @@ function createDatabase() {
       keyPath: "id",
       autoIncrement: true,
     });
+  };
+}
+
+function getUserById(id) {
+  findById("database", "users", id)
+    .then((user) => {
+      if (user) {
+        setFormData(user);
+      } else {
+        console.log("Usuário não encontrado");
+      }
+      console.log("Registro encontrado:", user);
+    })
+    .catch((error) => {
+      console.error("Erro:", error);
+    });
+}
+
+function getUserIdFromUrl() {
+  const search = window.location.search;
+  const id = Number(search.split("=").at(-1));
+  if (!isNaN(id)) {
+    userId = id;
+    getUserById(id);
+  }
+}
+
+function setFormData(user) {
+  document.getElementById("name").value = user.name;
+  document.getElementById("surname").value = user.surname;
+  document.getElementById("birthDate").value = user.birthDate;
+  document.getElementById("profession").value = user.profession;
+  document.getElementById("documentNumber").value = user.documentNumber;
+  document.getElementById("email").value = user.email;
+  document.getElementById("password").value = user.password;
+  document.getElementById("phone").value = user.phone;
+  document.getElementById("address").value = user.address;
+}
+
+function createUser(user) {
+  // getUsers();
+  // users.push(user);
+  // localStorage.setItem("USERS", JSON.stringify(users));
+
+  const request = indexedDB.open("database", 1);
+
+  request.onsuccess = function (event) {
+    const db = event.target.result;
+
+    const transaction = db.transaction(["users"], "readwrite");
+    const objectStore = transaction.objectStore("users");
+
+    console.log(user);
+    const requestAdd = objectStore.add(user);
+
+    requestAdd.onsuccess = function () {
+      window.location.href = "./usuarios.html";
+    };
+
+    requestAdd.onerror = function () {
+      console.log("Houve um erro!", event.target.error);
+    };
+  };
+
+  request.onerror = function (event) {
+    console.log("Houve um erro!", event.target.error);
+  };
+}
+
+function updateUser(user) {
+  const request = indexedDB.open("database", 1);
+
+  request.onsuccess = function (event) {
+    const db = event.target.result;
+
+    const transaction = db.transaction(["users"], "readwrite");
+    const objectStore = transaction.objectStore("users");
+
+    user.id = userId;
+    const requestUpdate = objectStore.put(user);
+
+    requestUpdate.onsuccess = function () {
+      window.location.href = "./usuarios.html";
+    };
+
+    requestUpdate.onerror = function () {
+      console.log("Houve um erro!", event.target.error);
+    };
+  };
+
+  request.onerror = function (event) {
+    console.log("Houve um erro!", event.target.error);
   };
 }

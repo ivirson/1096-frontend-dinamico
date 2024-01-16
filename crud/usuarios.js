@@ -4,6 +4,7 @@ let users = [];
 getUsers();
 
 function refreshUsersGrid() {
+  usersDiv.innerHTML = "";
   users.forEach((user) => {
     usersDiv.innerHTML += `
         <div class="col-4">
@@ -32,12 +33,8 @@ function refreshUsersGrid() {
                 </p>
             </div>
             <div class="card-footer d-flex justify-content-end">
-                <a href="#" class="btn btn-primary">
-                Editar
-                </a>
-                <a href="#" class="btn btn-danger">
-                Excluir
-                </a>
+                <a href="#" class="btn btn-primary" onclick="editUser(${user.id})">Editar</a>
+                <a class="btn btn-danger" onclick="removeUser(${user.id})">Excluir</a>
             </div>
             </div>
         </div>
@@ -46,27 +43,59 @@ function refreshUsersGrid() {
 }
 
 function getUsers() {
-  //   users = JSON.parse(localStorage.getItem("USERS") || "[]");
+  findAll("database", "users")
+    .then((records) => {
+      users = records;
+      refreshUsersGrid();
+      console.log("Registros encontrados:", records);
+    })
+    .catch((error) => {
+      console.error("Erro:", error);
+    });
+}
 
+function removeUser(id) {
   const request = indexedDB.open("database", 1);
 
   request.onsuccess = function (event) {
     const db = event.target.result;
 
-    const transaction = db.transaction(["users"], "readonly");
+    const transaction = db.transaction(["users"], "readwrite");
     const objectStore = transaction.objectStore("users");
 
-    const requestGetAll = objectStore.getAll();
+    const requestUser = objectStore.get(id);
 
-    requestGetAll.onsuccess = function (event) {
-      users = event.target.result;
-      refreshUsersGrid();
+    requestUser.onsuccess = function (event) {
+      const user = event.target.result;
+
+      if (user) {
+        const requestDelete = objectStore.delete(id);
+
+        requestDelete.onsuccess = function (event) {
+          getUsers();
+        };
+
+        requestDelete.onerror = function (event) {
+          console.log(
+            "Houve um erro ao excluir o registro!",
+            event.target.error
+          );
+        };
+      } else {
+        console.log("Usuário não encontrado");
+      }
     };
 
-    requestGetAll.onerror = function () {
+    requestUser.onerror = function () {
       console.log("Houve um erro!", event.target.error);
     };
   };
 
-  request.onerror = function (event) {};
+  request.onerror = function (event) {
+    console.log("Houve um erro!", event.target.error);
+  };
+}
+
+function editUser(id) {
+  window.location.href = `./cadastro.html?id=${id}`;
 }
