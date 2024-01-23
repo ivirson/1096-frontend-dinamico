@@ -1,4 +1,4 @@
-const key = "93cd1fb584994c05aeb62a2e4bc6048e";
+const key = "2d9bd811d7e441339622a6f81dae8f68";
 const apiUrl = `https://crudcrud.com/api/${key}/users`;
 
 async function findAll() {
@@ -34,6 +34,26 @@ async function save(user) {
   }
 }
 
-function update(user, id) {}
+async function update(user, id) {
+  try {
+    await fetch(`${apiUrl}/${id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(user),
+    });
+  } catch (error) {
+    throw error;
+  }
+}
 
-function remove(id) {}
+async function remove(id) {
+  try {
+    await fetch(`${apiUrl}/${id}`, {
+      method: "DELETE",
+    });
+  } catch (error) {
+    throw error;
+  }
+}

@@ -71,8 +71,6 @@ function validateFields() {
         hideErrorMessage(input);
       }
 
-      console.log(event);
-
       switch (input.id) {
         case "name":
         case "surname":
@@ -187,27 +185,11 @@ function createUser(user) {
 }
 
 function updateUser(user) {
-  const request = indexedDB.open("database", 1);
-
-  request.onsuccess = function (event) {
-    const db = event.target.result;
-
-    const transaction = db.transaction(["users"], "readwrite");
-    const objectStore = transaction.objectStore("users");
-
-    user.id = userId;
-    const requestUpdate = objectStore.put(user);
-
-    requestUpdate.onsuccess = function () {
+  update(user, userId)
+    .then(() => {
       window.location.href = "./usuarios.html";
-    };
-
-    requestUpdate.onerror = function () {
-      console.log("Houve um erro!", event.target.error);
-    };
-  };
-
-  request.onerror = function (event) {
-    console.log("Houve um erro!", event.target.error);
-  };
+    })
+    .catch((error) => {
+      console.error("Erro ao editar usuário", error);
+    });
 }
